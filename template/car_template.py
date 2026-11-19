@@ -1,86 +1,83 @@
+# TEMPLATE GAYA CAROUSEL (1080x1080, terang, kontras tinggi). Ganti isi slide, pertahankan aturan kontras dan ukuran huruf.
 from PIL import Image, ImageDraw, ImageFont
-import glob,math
-B=[f for f in glob.glob('/usr/share/fonts/**/DejaVuSans-Bold.ttf',recursive=True)][0]
-R=[f for f in glob.glob('/usr/share/fonts/**/DejaVuSans.ttf',recursive=True)][0]
-W,H=1080,1350
-BG=(250,249,246); INK=(28,34,48); MUT=(110,118,132); ACC=(40,120,255); GRN=(38,170,110); LINE=(225,228,234); SOFT=(235,242,255)
-def F(p,s): return ImageFont.truetype(p,s)
+import glob
+B=glob.glob('/usr/share/fonts/**/DejaVuSans-Bold.ttf',recursive=True)[0]
+R=glob.glob('/usr/share/fonts/**/DejaVuSans.ttf',recursive=True)[0]
+W=H=1080
+BG=(250,249,246); INK=(28,34,48); MUT=(68,78,94); ACC=(196,92,10); GRN=(38,150,110); BLU=(40,110,230); LINE=(225,228,234); SOFT=(255,240,225)
+F=lambda p,s:ImageFont.truetype(p,s)
 def wrap(d,t,f,w):
     out=[];l=''
     for wd in t.split():
         c=(l+' '+wd).strip()
-        if d.textlength(c,font=f)<=w: l=c
-        else: out.append(l); l=wd
-    out.append(l); return out
-def phone(d,x,y,w,h,fill=(255,255,255)):
-    d.rounded_rectangle([x,y,x+w,y+h],radius=w//6,fill=fill,outline=INK,width=6)
-    d.rounded_rectangle([x+w//2-w//7,y+h//30,x+w//2+w//7,y+h//30+h//40],radius=8,fill=INK)
-def battery(d,x,y,w,h,pct,col=GRN):
-    d.rounded_rectangle([x,y,x+w,y+h],radius=h//4,outline=INK,width=6,fill=(255,255,255))
-    d.rounded_rectangle([x+w+4,y+h//3,x+w+18,y+2*h//3],radius=4,fill=INK)
-    iw=int((w-20)*pct/100)
-    d.rounded_rectangle([x+10,y+10,x+10+iw,y+h-10],radius=h//5,fill=col)
-def ring(d,cx,cy,r,pct,col=GRN,wd=34):
-    d.ellipse([cx-r,cy-r,cx+r,cy+r],outline=LINE,width=wd)
-    d.arc([cx-r,cy-r,cx+r,cy+r],-90,-90+360*pct/100,fill=col,width=wd)
-def chip(d,x,y,t,f,fill=SOFT,tc=ACC):
-    w=d.textlength(t,font=f)+60; d.rounded_rectangle([x,y,x+w,y+84],radius=42,fill=fill)
-    d.text((x+30,y+42),t,font=f,fill=tc,anchor='lm'); return x+w
-def arrow(d,x,y):
-    d.line([x,y,x+50,y],fill=MUT,width=6); d.polygon([(x+50,y-14),(x+72,y),(x+50,y+14)],fill=MUT)
-def base(i,n,h,body,note=None,src=True):
-    im=Image.new('RGB',(W,H),BG); d=ImageDraw.Draw(im)
-    d.text((80,70),"@yg_lagitrend",font=F(R,32),fill=MUT)
-    d.text((W-80,70),f"{i}/{n}",font=F(B,32),fill=ACC,anchor='ra')
-    y=170;hf=F(B,64)
-    for l in wrap(d,h,hf,920): d.text((80,y),l,font=hf,fill=INK); y+=82
-    y+=15;bf=F(R,40)
-    for l in wrap(d,body,bf,920): d.text((80,y),l,font=bf,fill=MUT); y+=58
-    if note:
-        y+=10
-        for l in wrap(d,note,F(R,34),920): d.text((80,y),l,font=F(R,34),fill=MUT); y+=50
-    d.line([80,H-95,W-80,H-95],fill=LINE,width=3)
-    d.text((80,H-60),"Sumber: Apple Support (per November 2026)" if src else "",font=F(R,28),fill=MUT)
-    if i<n: d.text((W-80,H-60),"geser",font=F(B,28),fill=ACC,anchor='ra')
-    return im,d
-n=6;out=[]
+        if d.textlength(c,font=f)<=w:l=c
+        else:out.append(l);l=wd
+    out.append(l);return out
+def base(i,n,h,body,src,hs=60):
+    im=Image.new('RGB',(W,H),BG);d=ImageDraw.Draw(im)
+    d.text((80,55),"@yg_lagitrend",font=F(B,30),fill=INK)
+    d.text((W-80,55),f"{i}/{n}",font=F(B,28),fill=ACC,anchor='ra')
+    y=130;hf=F(B,hs)
+    for l in wrap(d,h,hf,920):d.text((80,y),l,font=hf,fill=INK);y+=int(hs*1.28)
+    y+=8;bf=F(R,38)
+    for l in wrap(d,body,bf,920):d.text((80,y),l,font=bf,fill=(52,60,75));y+=54
+    d.line([80,1000,W-80,1000],fill=LINE,width=3)
+    if src:d.text((80,1030),src,font=F(R,28),fill=MUT)
+    if i<n and (not src or d.textlength(src,font=F(R,28))<700):d.text((W-80,1030),"geser",font=F(B,30),fill=ACC,anchor='ra')
+    return im,d,y
+def bars(d,items,top=650,h=300,unit=""):
+    mx=max(v for _,v,_,_ in items);bw=300;gap=120;x0=(W-(len(items)*bw+(len(items)-1)*gap))//2
+    for k,(lab,v,col,txt) in enumerate(items):
+        x=x0+k*(bw+gap);bh=int(h*0.78*v/mx);y=top+h-bh
+        d.rounded_rectangle([x,y,x+bw,top+h],radius=14,fill=col)
+        d.text((x+bw//2,y-18),txt,font=F(B,34),fill=INK,anchor='ms')
+        d.text((x+bw//2,top+h+30),lab,font=F(B,28),fill=MUT,anchor='ms')
+def wheat(d,cx,cy,s=1,col=ACC):
+    d.line([cx,cy+70*s,cx,cy-60*s],fill=col,width=int(6*s))
+    for k in range(4):
+        y=cy-50*s+k*28*s
+        d.ellipse([cx-34*s,y-10*s,cx-6*s,y+10*s],fill=col);d.ellipse([cx+6*s,y-10*s,cx+34*s,y+10*s],fill=col)
+    d.ellipse([cx-9*s,cy-82*s,cx+9*s,cy-52*s],fill=col)
+def cross(d,cx,cy,s=1,col=GRN):
+    d.rounded_rectangle([cx-20*s,cy-60*s,cx+20*s,cy+60*s],radius=int(8*s),fill=col);d.rounded_rectangle([cx-60*s,cy-20*s,cx+60*s,cy+20*s],radius=int(8*s),fill=col)
+def bolt(d,cx,cy,s=1,col=BLU):
+    d.polygon([(cx+10*s,cy-75*s),(cx-40*s,cy+10*s),(cx-5*s,cy+10*s),(cx-15*s,cy+75*s),(cx+40*s,cy-15*s),(cx+5*s,cy-15*s)],fill=col)
+n=7;S='Sumber: '
 # 1
-im,d=base(1,n,"Pengguna iPhone 15 ke atas: ada pengaturan baterai yang jarang disentuh","Namanya batas pengisian. Ini cara kerjanya.")
-phone(d,380,690,320,520); battery(d,430,860,200,90,80); d.text((530,1040),"80%",font=F(B,70),fill=GRN,anchor='mm')
-ring(d,200,950,110,80); ring(d,880,950,110,80,ACC)
-im.save('/home/claude/car1/s1.png')
+im,d,y=base(1,n,"Bisnis apa yang akan selalu ramai sampai 50 tahun ke depan?","Jawabannya bukan soal tren. Cari kebutuhan yang tidak hilang walau zaman berganti.","",hs=68)
+for cx,fn in [(240,wheat),(540,cross),(840,bolt)]:
+    d.ellipse([cx-110,720-110+60,cx+110,720+110+60],fill=SOFT if fn is wheat else (232,244,238) if fn is cross else (232,240,255));fn(d,cx,780,1.3)
+im.save('/home/claude/out_carousel/s1.png')
 # 2
-im,d=base(2,n,"Jalurnya","Buka Settings, lalu Battery, lalu Charging. Di sana kamu bisa memilih batas pengisian antara 80 sampai 100 persen, kelipatan 5 persen.")
-x=80;f=F(B,38)
-x=chip(d,x,800,"Settings",f);arrow(d,x+15,842);x=chip(d,x+110,800,"Battery",f)
-x2=80;x2=chip(d,x2,930,"Charging",f,fill=(232,247,240),tc=GRN)
-for k,p in enumerate([80,85,90,95,100]):
-    cx=140+k*200; d.ellipse([cx-50,1080,cx+50,1180],fill=GRN if p==80 else (255,255,255),outline=GRN if p==80 else LINE,width=5)
-    d.text((cx,1130),str(p),font=F(B,34),fill=(255,255,255) if p==80 else MUT,anchor='mm')
-im.save('/home/claude/car1/s2.png')
+im,d,y=base(2,n,"Cara menilainya","Ini analisis tren, bukan ramalan pasti. Tiga ukuran sederhana:","")
+for k,t in enumerate(["Dibutuhkan semua orang, bukan hanya satu kelompok","Jumlah penggunanya terus bertambah","Sulit digantikan teknologi sepenuhnya"]):
+    yy=500+k*150;d.rounded_rectangle([80,yy,1000,yy+120],radius=24,fill=(255,255,255),outline=LINE,width=3)
+    d.ellipse([110,yy+25,180,yy+95],fill=ACC);d.text((145,yy+60),str(k+1),font=F(B,36),fill=(255,255,255),anchor='mm')
+    for j,l in enumerate(wrap(d,t,F(B,30),760)):d.text((210,yy+38+j*38 if len(wrap(d,t,F(B,30),760))>1 else yy+60),l,font=F(B,30),fill=INK,anchor='lm' if len(wrap(d,t,F(B,30),760))==1 else 'la')
+im.save('/home/claude/out_carousel/s2.png')
 # 3
-im,d=base(3,n,"Apa yang terjadi kalau batas dipasang","iPhone berhenti mengisi di sekitar angka itu. Pengisian lanjut lagi kalau baterai turun lebih dari 5 persen saat masih tersambung.")
-d.line([100,1100,980,1100],fill=LINE,width=4)
-pts=[(100,1080),(400,800),(640,740),(900,740)]
-d.line(pts[:3],fill=GRN,width=10); d.line([pts[2],(980,740)],fill=GRN,width=10)
-d.line([(640,740),(640,1100)],fill=LINE,width=3); d.text((640,1130),"berhenti di 80%",font=F(R,30),fill=MUT,anchor='ma')
-d.text((100,700),"100%",font=F(R,30),fill=MUT); d.text((100,1130),"mulai ngecas",font=F(R,30),fill=MUT)
-im.save('/home/claude/car1/s3.png')
+im,d,y=base(3,n,"1. Pangan","Menurut proyeksi FAO (2009), produksi pangan dunia perlu naik sekitar 70 persen pada 2050 dibanding 2005/07 untuk memberi makan penduduk yang bertambah.","Sumber: FAO, How to Feed the World in 2050 (proyeksi 2009)")
+bars(d,[("2005/07",100,(196,204,216),"100"),("2050 (proyeksi)",170,ACC,"170")],top=y+60,h=980-y-80-60)
+d.text((W//2,y+30),"indeks produksi pangan",font=F(B,28),fill=MUT,anchor='mm')
+wheat(d,W//2,y+170,0.9)
+im.save('/home/claude/out_carousel/s3.png')
 # 4
-im,d=base(4,n,"Satu catatan","Kalau batas di bawah 100 persen, sesekali iPhone tetap mengisi sampai penuh supaya estimasi baterainya tetap akurat.","Itu normal, bukan error.")
-battery(d,260,780,520,200,100,ACC)
-cx,cy,r=540,1130,60
-d.arc([cx-r,cy-r,cx+r,cy+r],30,300,fill=ACC,width=12); d.polygon([(cx+50,cy-48),(cx+85,cy-10),(cx+30,cy-8)],fill=ACC)
-im.save('/home/claude/car1/s4.png')
+im,d,y=base(4,n,"2. Kesehatan dan perawatan lansia","PBB memproyeksikan orang berusia 65 tahun ke atas naik dari sekitar 857 juta (2025) menjadi sekitar 1,58 miliar pada 2050, atau sekitar 16 persen penduduk dunia.","Sumber: PBB (UN DESA), World Population Prospects")
+bars(d,[("2025",857,(196,204,216),"857 juta"),("2050 (proyeksi)",1580,GRN,"1,58 miliar")],top=y+60,h=980-y-80-60)
+cross(d,W//2,y+170,0.8)
+im.save('/home/claude/out_carousel/s4.png')
 # 5
-im,d=base(5,n,"Menu ini untuk model mana?","iPhone 15 dan model setelahnya. Di iPhone 14 ke bawah, pengaturannya ada di Settings, Battery, Battery Health & Charging.")
-for k,(t,c) in enumerate([("iPhone 15\nke atas",GRN),("iPhone 14\nke bawah",MUT)]):
-    x=170+k*470; phone(d,x,860,240,380,fill=(255,255,255)); d.text((x+120,1050),t,font=F(B,32),fill=c,anchor='mm',align='center')
-im.save('/home/claude/car1/s5.png')
+im,d,y=base(5,n,"3. Listrik dan energi","IEA mencatat permintaan listrik tumbuh jauh lebih cepat dari total energi. Pada skenario kebijakan saat ini, kebutuhan listrik dunia bisa hampir dua kali lipat pada 2050.","Sumber: IEA, World Energy Outlook 2025 (skenario STEPS)")
+bars(d,[("2023",26000,(196,204,216),"26.000 TWh"),("2050 (proyeksi)",50000,BLU,"50.000 TWh")],top=y+60,h=980-y-80-60)
+bolt(d,W//2,y+170,0.8)
+im.save('/home/claude/out_carousel/s5.png')
 # 6
-im,d=base(6,n,"Kamu lebih sering ngecas semalaman atau di meja kerja?","Itu yang menentukan apakah batas 80 persen cocok untuk kebiasaanmu.","Tulis di komentar.",src=False)
-d.ellipse([240,820,440,1020],fill=INK); d.ellipse([290,800,470,980],fill=BG)
-d.rectangle([600,900,900,930],fill=INK); d.rectangle([620,930,640,1040],fill=INK); d.rectangle([860,930,880,1040],fill=INK)
-d.rounded_rectangle([660,820,840,900],radius=10,outline=INK,width=6)
-d.text((340,1090),"semalaman",font=F(B,34),fill=ACC,anchor='mm'); d.text((750,1090),"meja kerja",font=F(B,34),fill=ACC,anchor='mm')
-im.save('/home/claude/car1/s6.png')
+im,d,y=base(6,n,"Catatan penting","Bisnis di bidang yang ramai belum tentu mudah atau pasti untung. Persaingan, modal, izin, dan cara menjalankannya tetap menentukan.","Ini bukan saran keuangan atau investasi.")
+d.polygon([(540,560),(400,830),(680,830)],outline=ACC,width=10,fill=SOFT);d.text((540,740),"!",font=F(B,110),fill=ACC,anchor='mm')
+d.text((80,900),"Lakukan riset sendiri dan hitung modal sebelum mulai.",font=F(B,30),fill=INK)
+im.save('/home/claude/out_carousel/s6.png')
+# 7
+im,d,y=base(7,n,"Kalau harus pilih satu, kamu pilih yang mana?","Pangan, kesehatan, atau listrik? Tulis alasanmu di komentar.","Sumber: FAO, PBB (UN DESA), IEA")
+for cx,fn,lab,c in [(240,wheat,"Pangan",SOFT),(540,cross,"Kesehatan",(232,244,238)),(840,bolt,"Listrik",(232,240,255))]:
+    d.ellipse([cx-110,610,cx+110,830],fill=c);fn(d,cx,720,1.3);d.text((cx,880),lab,font=F(B,34),fill=INK,anchor='mm')
+im.save('/home/claude/out_carousel/s7.png')
