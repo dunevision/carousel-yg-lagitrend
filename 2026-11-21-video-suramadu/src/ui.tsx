@@ -169,7 +169,7 @@ export const Callout: React.FC<{cam: Cam; at: V3; label: string; dx: number; dy:
   const f = useCurrentFrame();
   const k = easeOut(clamp01((f - from) / 9));
   if (k <= 0) return null;
-  const [x, y] = project(at, cam);
+  const [x, y] = project(at, cam, f);
   const T = TONES[tone];
   return (
     <AbsoluteFill style={{opacity: k, pointerEvents: 'none'}}>

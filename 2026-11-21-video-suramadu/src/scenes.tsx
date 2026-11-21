@@ -1,15 +1,17 @@
 import React from 'react';
 import {useCurrentFrame} from 'remotion';
 import * as THREE from 'three';
-import {Box, Burst, Cam, Cyl, DECK, Person, Sea, Stage, TH, V3, clamp01, ease, easeOut, lerp, lerp3, rnd} from './kit';
+import {Box, Burst, Cam, Clouds, Cyl, DECK, Person, Sea, Stage, TH, V3, clamp01, ease, easeOut, lerp, lerp3, rnd} from './kit';
 import {Bridge, CablesAt, CityLights, DeckSeg, Gantry, Searchlight, Segment, Ship, TowerAt} from './bridge';
 import {Callout, SceneFrame, StatBox, Tag, C} from './ui';
 import {FPS, Timed} from './script';
 
 type P = {s: Timed};
-const DAY_BG = '#cfe7e4';
+const DAY_BG = '#dcefec';
+const DAY_SKY: [string, string] = ['#6fb0e4', '#e3f2ee'];
+const NIGHT_SKY: [string, string] = ['#03051a', '#1b2b66'];
 const SEA_DAY = '#86cfc6';
-const NIGHT_BG = '#0a0f2c';
+const NIGHT_BG = '#15204e';
 
 const useT = (s: Timed) => {
   const f = useCurrentFrame();
@@ -38,7 +40,7 @@ const S01: React.FC<P> = ({s}) => {
   const cam: Cam = {pos: lerp3([-72, 19, 18], [-54, 14, 11], p), look: [0, 7, 0], fov: 46};
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={NIGHT_BG} fog={[90, 330]} night>
+      <Stage cam={cam} bg={NIGHT_BG} sky={NIGHT_SKY} stars fog={[90, 330]} night>
         <NightWorld f={f} gapHalf={1.4} />
       </Stage>
       <Callout cam={cam} at={[0, DECK + 0.3, 0]} label="potongan terakhir" dx={150} dy={230} from={40} />
@@ -76,7 +78,7 @@ const S02: React.FC<P> = ({s}) => {
   const segY = lerp(0.5, DECK + 0.05, ease((p - 0.1) / 0.8));
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={NIGHT_BG} fog={[40, 260]} night>
+      <Stage cam={cam} bg={NIGHT_BG} sky={NIGHT_SKY} stars fog={[40, 260]} night>
         <GapNight f={f} segY={segY} />
       </Stage>
       <Callout cam={cam} at={[0, segY, 2.9]} label="potongan terakhir" dx={170} dy={190} from={12} />
@@ -90,7 +92,7 @@ const S03: React.FC<P> = ({s}) => {
   const cam: Cam = {pos: [-68, 9, 10], look: [0, 17, 0], fov: 58};
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={NIGHT_BG} fog={[90, 340]} night>
+      <Stage cam={cam} bg={NIGHT_BG} sky={NIGHT_SKY} stars fog={[90, 340]} night>
         <NightWorld f={f} gapHalf={0} />
         <Burst c={[-8, 26, -4]} t={t - 0.2} color="#ffffff" />
         <Burst c={[2, 31, -6]} t={t - 0.55} color="#8fc2ff" r={10} />
@@ -105,6 +107,7 @@ const S03: React.FC<P> = ({s}) => {
 const DayWorld: React.FC<{f: number; gapHalf: number; dy?: number; h?: number}> = ({f, gapHalf, dy = 0, h = TH}) => (
   <>
     <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <Clouds f={f} />
     <group position={[0, dy, 0]}>
       <Bridge gapHalf={gapHalf} h={h} />
     </group>
@@ -118,7 +121,7 @@ const S04: React.FC<P> = ({s}) => {
   const dy = -ease((p - 0.55) / 0.35) * 45;
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG} fog={[150, 480]}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[150, 480]}>
         <DayWorld f={f} gapHalf={1.4} dy={dy} />
       </Stage>
       <Tag label="DIPUTAR MUNDUR" left={48} top={64} />
@@ -211,7 +214,7 @@ const S06: React.FC<P> = ({s}) => {
   const rings = [0, 1, 2].map((i) => ((f * 0.17 + i * 3.2) % 9.6) + 1);
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY}>
         <Seabed f={f} />
         <Box p={[0, 5.4, 0]} s={[3.6, 0.7, 1.6]} c="#5d86b0" />
         <Box p={[-0.3, 6.1, 0]} s={[1.3, 0.8, 1.2]} c="#e3edf5" />
@@ -258,7 +261,7 @@ const S07: React.FC<P> = ({s}) => {
   const capY = lerp(16, 9.2, easeOut((p - 0.62) / 0.25));
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY}>
         <Seabed f={f} />
         {xs.map((x, i) => {
           const k = ease((t - 0.7 - i * 0.45) / 1.7);
@@ -341,8 +344,9 @@ const S09: React.FC<P> = ({s}) => {
   const hr = lerp(3, TH, easeOut((p - 0.1) / 0.75));
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG} fog={[80, 380]}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[80, 380]}>
         <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <Clouds f={f} />
         <TowerAt x={-20} h={hl} />
         <TowerAt x={20} h={hr} />
         <Crane x={-20} h={hl} />
@@ -368,8 +372,9 @@ const S10: React.FC<P> = ({s}) => {
   const ok = (x: number) => Math.abs(x) <= L - 0.5;
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG} fog={[100, 400]}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[100, 400]}>
         <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <Clouds f={f} />
         <TowerAt x={0} />
         <DeckSeg x0={-L} x1={L} />
         {[-1, 1].map((d) => (
@@ -416,7 +421,8 @@ const S11: React.FC<P> = ({s}) => {
   const endR: V3 = [R * Math.cos(a), yPole + R * Math.sin(a), 0];
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg="#cfe3ea" fog={[40, 140]}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[60, 260]}>
+        <Clouds f={f} z={-120} y={45} />
         <Box p={[px, -0.25, 0]} s={[80, 0.5, 30]} c="#79b84a" />
         <Box p={[px, 0.03, 3.6]} s={[80, 0.06, 4.4]} c="#8b8f95" />
         {Array.from({length: 24}).map((_, i) => (
@@ -458,8 +464,9 @@ const S12: React.FC<P> = ({s}) => {
   const sx = lerp(3, 20, p);
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG} fog={[100, 420]}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[100, 420]}>
         <Sea f={f} color={SEA_DAY} size={600} seg={130} amp={0.07} />
+        <Clouds f={f} />
         <Bridge />
         <Ship p={[sx, 0.1, 2.5]} sc={0.6} />
         <Cyl a={[10.5, 0, 4.2]} b={[10.5, DECK - 0.3, 4.2]} r={0.05} c={C.orange} />
@@ -479,8 +486,9 @@ const S13: React.FC<P> = ({s}) => {
   const g = lerp(16, 2.6, ease(p));
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={DAY_BG} fog={[150, 480]}>
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[150, 480]}>
         <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <Clouds f={f} />
         <Bridge gapHalf={g} />
         <Gantry x={-g} dir={-1} />
         <Gantry x={g} dir={1} />
@@ -500,7 +508,7 @@ const S14: React.FC<P> = ({s}) => {
   const tf = s.phr[2].s;
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg={NIGHT_BG} fog={[50, 320]} night>
+      <Stage cam={cam} bg={NIGHT_BG} sky={NIGHT_SKY} stars fog={[50, 320]} night>
         <GapNight f={f} segY={segY} showSeg g={2.3} />
         <Burst c={[-8, 28, -4]} t={t - tf + 0.2} color="#ffffff" />
         <Burst c={[8, 32, -6]} t={t - tf + 0.5} color="#8fc2ff" r={10} />

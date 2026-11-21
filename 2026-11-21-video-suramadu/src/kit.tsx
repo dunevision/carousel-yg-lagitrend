@@ -1,4 +1,5 @@
 import React, {useLayoutEffect, useMemo} from 'react';
+import {useCurrentFrame} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
 import {useThree} from '@react-three/fiber';
 import * as THREE from 'three';
@@ -24,6 +25,95 @@ export const rnd = (i: number) => {
   return x - Math.floor(x);
 };
 
+// goyangan kamera halus supaya terasa sinematik (dipakai juga oleh label agar tetap menempel)
+export const drift = (cam: Cam, f: number): Cam => {
+  const d = Math.hypot(cam.pos[0] - cam.look[0], cam.pos[1] - cam.look[1], cam.pos[2] - cam.look[2]) * 0.007;
+  return {
+    ...cam,
+    pos: [cam.pos[0] + Math.sin(f * 0.021) * d, cam.pos[1] + Math.cos(f * 0.027) * d * 0.6, cam.pos[2]],
+  };
+};
+
+let glowTex: THREE.CanvasTexture | null = null;
+export const getGlow = () => {
+  if (!glowTex) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,1)');
+    gr.addColorStop(0.25, 'rgba(255,255,255,0.55)');
+    gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 128, 128);
+    glowTex = new THREE.CanvasTexture(c);
+  }
+  return glowTex;
+};
+
+// cahaya menyebar palsu (pengganti bloom)
+export const Glow: React.FC<{p: V3; size?: number; color?: string; opacity?: number}> = ({p, size = 2.5, color = '#ffcf80', opacity = 0.9}) => (
+  <sprite position={p} scale={[size, size, 1]}>
+    <spriteMaterial map={getGlow()} color={color} transparent opacity={opacity} blending={THREE.AdditiveBlending} depthWrite={false} fog={false} />
+  </sprite>
+);
+
+export const Sky: React.FC<{top: string; horizon: string; stars?: boolean}> = ({top, horizon, stars}) => {
+  const u = useMemo(() => ({top: {value: new THREE.Color(top)}, hor: {value: new THREE.Color(horizon)}}), [top, horizon]);
+  const starGeo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const n = 260;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const th = rnd(i) * Math.PI * 2;
+      const ph = 0.12 + rnd(i + 50) * 1.3;
+      pos[i * 3] = Math.cos(th) * Math.cos(ph) * 700;
+      pos[i * 3 + 1] = Math.sin(ph) * 700;
+      pos[i * 3 + 2] = Math.sin(th) * Math.cos(ph) * 700;
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    return g;
+  }, []);
+  return (
+    <group>
+      <mesh renderOrder={-10}>
+        <sphereGeometry args={[900, 24, 16]} />
+        <shaderMaterial
+          side={THREE.BackSide}
+          depthWrite={false}
+          fog={false}
+          uniforms={u}
+          vertexShader={'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }'}
+          fragmentShader={'uniform vec3 top; uniform vec3 hor; varying vec3 vP; void main(){ float h = clamp(normalize(vP).y,0.0,1.0); gl_FragColor = vec4(mix(hor, top, pow(h,0.55)),1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}
+        />
+      </mesh>
+      {stars ? (
+        <points geometry={starGeo}>
+          <pointsMaterial color="#ffffff" size={2.2} sizeAttenuation={false} fog={false} transparent opacity={0.85} depthWrite={false} />
+        </points>
+      ) : null}
+    </group>
+  );
+};
+
+export const Clouds: React.FC<{f: number; y?: number; z?: number; n?: number}> = ({f, y = 70, z = -160, n = 9}) => (
+  <group>
+    {Array.from({length: n}).map((_, i) => {
+      const x = ((-260 + i * 62 + rnd(i) * 30 + f * 0.05 + 520) % 520) - 260;
+      return (
+        <group key={i} position={[x, y + rnd(i + 3) * 25, z - rnd(i + 8) * 120]} scale={[1, 0.45, 0.8]}>
+          {[0, 1, 2, 3].map((k) => (
+            <mesh key={k} position={[(k - 1.5) * 10, rnd(i + k) * 3, 0]}>
+              <icosahedronGeometry args={[9 + rnd(i * 4 + k) * 5, 1]} />
+              <meshStandardMaterial color="#ffffff" flatShading emissive="#dfeff2" emissiveIntensity={0.5} fog={false} />
+            </mesh>
+          ))}
+        </group>
+      );
+    })}
+  </group>
+);
+
 const Rig: React.FC<{cam: Cam}> = ({cam}) => {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   useLayoutEffect(() => {
@@ -41,28 +131,65 @@ export const Stage: React.FC<{
   bg: string;
   fog?: [number, number];
   night?: boolean;
+  sky?: [string, string];
+  stars?: boolean;
+  shadow?: number;
   children: React.ReactNode;
-}> = ({cam, bg, fog, night, children}) => (
-  <ThreeCanvas width={CW} height={CH} camera={{position: cam.pos, fov: cam.fov ?? 45, near: 0.1, far: 1500}}>
-    <color attach="background" args={[bg]} />
-    {fog ? <fog attach="fog" args={[bg, fog[0], fog[1]]} /> : null}
-    <Rig cam={cam} />
-    {night ? (
-      <>
-        <hemisphereLight args={['#9aa8f0', '#2a3260', 2.4]} />
-        <directionalLight position={[-20, 40, 30]} intensity={1.8} color="#b9c6ff" />
-      </>
-    ) : (
-      <>
-        <hemisphereLight args={['#ffffff', '#a9c4c4', 1.6]} />
-        <directionalLight position={[30, 50, 25]} intensity={2.4} color="#fff3dc" />
-      </>
-    )}
-    {children}
-  </ThreeCanvas>
-);
+}> = ({cam: cam0, bg, fog, night, sky, stars, shadow = 60, children}) => {
+  const f = useCurrentFrame();
+  const cam = drift(cam0, f);
+  return (
+    <ThreeCanvas width={CW} height={CH} shadows camera={{position: cam.pos, fov: cam.fov ?? 45, near: 0.1, far: 2000}}>
+      <color attach="background" args={[bg]} />
+      {fog ? <fog attach="fog" args={[bg, fog[0], fog[1]]} /> : null}
+      {sky ? <Sky top={sky[0]} horizon={sky[1]} stars={stars} /> : null}
+      <Rig cam={cam} />
+      {night ? (
+        <>
+          <hemisphereLight args={['#9aa8f0', '#2a3260', 1.9]} />
+          <directionalLight
+            position={[-35, 55, 40]}
+            intensity={2.2}
+            color="#b9c6ff"
+            castShadow={shadow > 0}
+            shadow-mapSize={[2048, 2048]}
+            shadow-camera-left={-shadow}
+            shadow-camera-right={shadow}
+            shadow-camera-top={shadow}
+            shadow-camera-bottom={-shadow}
+            shadow-camera-near={1}
+            shadow-camera-far={220}
+            shadow-bias={-0.0004}
+            shadow-normalBias={0.04}
+          />
+        </>
+      ) : (
+        <>
+          <hemisphereLight args={['#ffffff', '#a9c4c4', 1.25]} />
+          <directionalLight
+            position={[35, 55, 30]}
+            intensity={2.9}
+            color="#fff1d6"
+            castShadow={shadow > 0}
+            shadow-mapSize={[2048, 2048]}
+            shadow-camera-left={-shadow}
+            shadow-camera-right={shadow}
+            shadow-camera-top={shadow}
+            shadow-camera-bottom={-shadow}
+            shadow-camera-near={1}
+            shadow-camera-far={220}
+            shadow-bias={-0.0004}
+            shadow-normalBias={0.04}
+          />
+        </>
+      )}
+      {children}
+    </ThreeCanvas>
+  );
+};
 
-export const project = (p: V3, cam: Cam): [number, number] => {
+export const project = (p: V3, cam0: Cam, f = 0): [number, number] => {
+  const cam = drift(cam0, f);
   const c = new THREE.PerspectiveCamera(cam.fov ?? 45, CW / CH, 0.1, 1500);
   c.position.set(...cam.pos);
   c.lookAt(...cam.look);
@@ -82,7 +209,7 @@ export const Box: React.FC<{
   opacity?: number;
   rough?: number;
 }> = ({p, s, c, rot, emissive, ei = 0.6, opacity, rough = 0.85}) => (
-  <mesh position={p} rotation={rot}>
+  <mesh position={p} rotation={rot} castShadow={opacity === undefined} receiveShadow>
     <boxGeometry args={s} />
     <meshStandardMaterial
       color={c}
@@ -106,7 +233,7 @@ export const Cyl: React.FC<{a: V3; b: V3; r: number; c: string; emissive?: strin
     return {mid: va.clone().add(vb).multiplyScalar(0.5), len, q};
   }, [a[0], a[1], a[2], b[0], b[1], b[2]]);
   return (
-    <mesh position={mid} quaternion={q}>
+    <mesh position={mid} quaternion={q} castShadow>
       <cylinderGeometry args={[r, r, len, seg]} />
       <meshStandardMaterial color={c} flatShading emissive={emissive ?? '#000000'} emissiveIntensity={emissive ? 0.6 : 0} />
     </mesh>
@@ -126,21 +253,33 @@ export const Sea: React.FC<{
     const g = new THREE.PlaneGeometry(size, size, seg, seg);
     g.rotateX(-Math.PI / 2);
     const p = g.attributes.position;
+    const col = new Float32Array(p.count * 3);
+    const base = new THREE.Color(color);
+    const light = base.clone().lerp(new THREE.Color('#ffffff'), 0.16);
+    const deep = base.clone().multiplyScalar(0.85);
+    const tmp = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i);
       const z = p.getZ(i);
-      p.setY(i, Math.sin(x * 0.45 + f * 0.07) * amp + Math.cos(z * 0.38 + f * 0.055) * amp);
+      const h = Math.sin(x * 0.45 + f * 0.07) * amp + Math.cos(z * 0.38 + f * 0.055) * amp + Math.sin((x + z) * 0.9 + f * 0.11) * amp * 0.4;
+      p.setY(i, h);
+      const k = clamp01(0.5 + h / (amp * 3.6) + (rnd(i) - 0.5) * 0.15);
+      tmp.copy(deep).lerp(k > 0.5 ? light : base, Math.abs(k - 0.5) * 2 * 0.6 + 0.05);
+      col[i * 3] = tmp.r;
+      col[i * 3 + 1] = tmp.g;
+      col[i * 3 + 2] = tmp.b;
     }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.computeVertexNormals();
     return g;
-  }, [f, size, seg, amp]);
+  }, [f, size, seg, amp, color]);
   return (
-    <mesh geometry={geo} position={[0, y, 0]}>
+    <mesh geometry={geo} position={[0, y, 0]} receiveShadow>
       <meshStandardMaterial
-        color={color}
+        vertexColors
         flatShading
-        roughness={0.45}
-        metalness={0.1}
+        roughness={0.28}
+        metalness={0.25}
         transparent={opacity !== undefined}
         opacity={opacity ?? 1}
       />
@@ -160,27 +299,49 @@ export const Person: React.FC<{
   armsFwd?: number;
 }> = ({p, f, walk, shirt = '#f1f1ee', pants = '#2b2f36', hat = true, sc = 1, rotY = 0, armsFwd = 0}) => {
   const sw = walk ? Math.sin(f * 0.28) * 0.6 : 0;
+  const bob = walk ? Math.abs(Math.sin(f * 0.28)) * 0.05 : 0;
+  const skin = '#d99a6c';
+  const Capsule: React.FC<{pos: V3; r: number; l: number; c: string}> = ({pos, r, l, c}) => (
+    <mesh position={pos} castShadow receiveShadow>
+      <capsuleGeometry args={[r, l, 4, 10]} />
+      <meshStandardMaterial color={c} roughness={0.7} />
+    </mesh>
+  );
   return (
-    <group position={p} scale={sc} rotation={[0, rotY, 0]}>
+    <group position={[p[0], p[1] + bob, p[2]]} scale={sc} rotation={[0, rotY, 0]}>
       {[-1, 1].map((k) => (
-        <group key={k} position={[k * 0.18, 0.9, 0]} rotation={[sw * k, 0, 0]}>
-          <Box p={[0, -0.45, 0]} s={[0.22, 0.9, 0.24]} c={pants} />
+        <group key={k} position={[k * 0.17, 0.92, 0]} rotation={[sw * k, 0, 0]}>
+          <Capsule pos={[0, -0.42, 0]} r={0.1} l={0.7} c={pants} />
+          <Box p={[0, -0.88, 0.05]} s={[0.2, 0.12, 0.34]} c="#1a1a1a" />
         </group>
       ))}
-      <Box p={[0, 1.3, 0]} s={[0.66, 0.85, 0.38]} c={shirt} />
-      <mesh position={[0, 1.95, 0]}>
-        <sphereGeometry args={[0.23, 12, 10]} />
-        <meshStandardMaterial color="#d99a6c" flatShading />
+      <Capsule pos={[0, 1.3, 0]} r={0.27} l={0.42} c={shirt} />
+      <mesh position={[0, 1.88, 0]} castShadow>
+        <sphereGeometry args={[0.2, 16, 12]} />
+        <meshStandardMaterial color={skin} roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 1.7, 0]}>
+        <cylinderGeometry args={[0.08, 0.09, 0.14, 8]} />
+        <meshStandardMaterial color={skin} />
       </mesh>
       {hat ? (
-        <mesh position={[0, 2.2, 0]}>
-          <coneGeometry args={[0.62, 0.3, 14]} />
-          <meshStandardMaterial color="#e6c46a" flatShading />
+        <mesh position={[0, 2.09, 0]} castShadow>
+          <coneGeometry args={[0.6, 0.3, 24]} />
+          <meshStandardMaterial color="#e6c46a" roughness={0.9} />
         </mesh>
-      ) : null}
+      ) : (
+        <mesh position={[0, 2.0, 0]}>
+          <sphereGeometry args={[0.205, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#22201e" />
+        </mesh>
+      )}
       {[-1, 1].map((k) => (
-        <group key={k} position={[k * 0.42, 1.68, 0]} rotation={[armsFwd - sw * k * 0.8, 0, k * 0.05]}>
-          <Box p={[0, -0.36, 0]} s={[0.15, 0.74, 0.16]} c={shirt} />
+        <group key={k} position={[k * 0.36, 1.56, 0]} rotation={[armsFwd - sw * k * 0.8, 0, k * 0.06]}>
+          <Capsule pos={[0, -0.32, 0]} r={0.075} l={0.5} c={shirt} />
+          <mesh position={[0, -0.68, 0]}>
+            <sphereGeometry args={[0.085, 8, 8]} />
+            <meshStandardMaterial color={skin} />
+          </mesh>
         </group>
       ))}
     </group>
@@ -208,7 +369,7 @@ export const Burst: React.FC<{c: V3; t: number; color: string; n?: number; r?: n
   const k = clamp01(t / life);
   return (
     <points geometry={geo}>
-      <pointsMaterial color={color} size={1.1} sizeAttenuation transparent opacity={1 - k * k} depthWrite={false} />
+      <pointsMaterial color={color} map={getGlow()} size={2.6} sizeAttenuation transparent opacity={1 - k * k} depthWrite={false} blending={THREE.AdditiveBlending} fog={false} />
     </points>
   );
 };
