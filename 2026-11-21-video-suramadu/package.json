@@ -4,14 +4,16 @@
   "version": "1.0.0",
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render src/index.ts Suramadu out/suramadu.mp4 --browser-executable=/opt/pw-browsers/chromium --chrome-mode=chrome-for-testing --gl=angle --concurrency=4"
+    "render": "remotion render src/index.ts Suramadu out/suramadu-v3.mp4 --browser-executable=/opt/pw-browsers/chromium --chrome-mode=chrome-for-testing --gl=angle --concurrency=4"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
     "@remotion/cli": "^4.0.545",
     "@remotion/three": "^4.0.545",
+    "postprocessing": "^6.39.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "remotion": "^4.0.545",

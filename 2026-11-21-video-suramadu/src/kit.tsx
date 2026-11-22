@@ -3,6 +3,7 @@ import {useCurrentFrame} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
 import {useThree} from '@react-three/fiber';
 import * as THREE from 'three';
+import {Env, Post, tex} from './fx';
 
 export const CW = 1080;
 export const CH = 1600;
@@ -89,7 +90,7 @@ export const Sky: React.FC<{top: string; horizon: string; stars?: boolean}> = ({
       </mesh>
       {stars ? (
         <points geometry={starGeo}>
-          <pointsMaterial color="#ffffff" size={2.2} sizeAttenuation={false} fog={false} transparent opacity={0.85} depthWrite={false} />
+          <pointsMaterial color="#ffffff" size={1.3} sizeAttenuation={false} fog={false} transparent opacity={0.55} depthWrite={false} />
         </points>
       ) : null}
     </group>
@@ -134,8 +135,10 @@ export const Stage: React.FC<{
   sky?: [string, string];
   stars?: boolean;
   shadow?: number;
+  post?: boolean;
+  bloom?: number;
   children: React.ReactNode;
-}> = ({cam: cam0, bg, fog, night, sky, stars, shadow = 60, children}) => {
+}> = ({cam: cam0, bg, fog, night, sky, stars, shadow = 60, post = true, bloom, children}) => {
   const f = useCurrentFrame();
   const cam = drift(cam0, f);
   return (
@@ -183,7 +186,9 @@ export const Stage: React.FC<{
           />
         </>
       )}
+      <Env intensity={night ? 0.22 : 0.55} />
       {children}
+      {post ? <Post night={night} bloom={bloom} /> : null}
     </ThreeCanvas>
   );
 };
@@ -199,6 +204,7 @@ export const project = (p: V3, cam0: Cam, f = 0): [number, number] => {
   return [((v.x + 1) / 2) * CW, ((1 - v.y) / 2) * CH];
 };
 
+export type TexKind = 'concrete' | 'asphalt' | 'grass' | 'mud' | 'steel' | 'deck' | 'sand';
 export const Box: React.FC<{
   p: V3;
   s: V3;
@@ -208,20 +214,30 @@ export const Box: React.FC<{
   ei?: number;
   opacity?: number;
   rough?: number;
-}> = ({p, s, c, rot, emissive, ei = 0.6, opacity, rough = 0.85}) => (
-  <mesh position={p} rotation={rot} castShadow={opacity === undefined} receiveShadow>
-    <boxGeometry args={s} />
-    <meshStandardMaterial
-      color={c}
-      flatShading
-      roughness={rough}
-      emissive={emissive ?? '#000000'}
-      emissiveIntensity={emissive ? ei : 0}
-      transparent={opacity !== undefined}
-      opacity={opacity ?? 1}
-    />
-  </mesh>
-);
+  t?: TexKind;
+  ts?: number;
+  metal?: number;
+}> = ({p, s, c, rot, emissive, ei = 0.6, opacity, rough = 0.85, t, ts = 4, metal = 0}) => {
+  const map = useMemo(
+    () => (t ? tex(t, Math.max(0.25, Math.max(s[0], s[2]) / ts), Math.max(0.25, Math.max(s[1], Math.min(s[0], s[2])) / ts)) : null),
+    [t, s[0], s[1], s[2], ts],
+  );
+  return (
+    <mesh position={p} rotation={rot} castShadow={opacity === undefined} receiveShadow>
+      <boxGeometry args={s} />
+      <meshStandardMaterial
+        color={c}
+        map={map}
+        roughness={rough}
+        metalness={metal}
+        emissive={emissive ?? '#000000'}
+        emissiveIntensity={emissive ? ei : 0}
+        transparent={opacity !== undefined}
+        opacity={opacity ?? 1}
+      />
+    </mesh>
+  );
+};
 
 export const Cyl: React.FC<{a: V3; b: V3; r: number; c: string; emissive?: string; seg?: number}> = ({a, b, r, c, emissive, seg = 6}) => {
   const {mid, len, q} = useMemo(() => {
@@ -371,5 +387,61 @@ export const Burst: React.FC<{c: V3; t: number; color: string; n?: number; r?: n
     <points geometry={geo}>
       <pointsMaterial color={color} map={getGlow()} size={2.6} sizeAttenuation transparent opacity={1 - k * k} depthWrite={false} blending={THREE.AdditiveBlending} fog={false} />
     </points>
+  );
+};
+
+// rumpun padi (instanced, statis)
+export const RiceField: React.FC<{x0: number; x1: number; z0: number; z1: number; y?: number; n?: number}> = ({x0, x1, z0, z1, y = 0.6, n = 1400}) => {
+  const mesh = useMemo(() => {
+    const geo = new THREE.ConeGeometry(0.035, 1, 3);
+    geo.translate(0, 0.5, 0);
+    const mat = new THREE.MeshStandardMaterial({color: '#5fae3c', roughness: 0.8});
+    const m = new THREE.InstancedMesh(geo, mat, n);
+    const o = new THREE.Object3D();
+    const col = new THREE.Color();
+    for (let i = 0; i < n; i++) {
+      const clump = Math.floor(i / 7);
+      const cx = x0 + rnd(clump) * (x1 - x0);
+      const cz = z0 + rnd(clump + 0.5) * (z1 - z0);
+      o.position.set(cx + (rnd(i) - 0.5) * 0.25, y, cz + (rnd(i + 2) - 0.5) * 0.25);
+      o.rotation.set((rnd(i + 3) - 0.5) * 0.7, rnd(i + 4) * 6, (rnd(i + 5) - 0.5) * 0.7);
+      o.scale.set(1, 0.9 + rnd(i + 6) * 0.9, 1);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+      m.setColorAt(i, col.set('#4f9e30').lerp(new THREE.Color('#a8d65a'), rnd(i + 7) * 0.6));
+    }
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }, [x0, x1, z0, z1, y, n]);
+  return <primitive object={mesh} />;
+};
+
+export const Palm: React.FC<{p: V3; h?: number; lean?: number; seed?: number}> = ({p, h = 7, lean = 0.15, seed = 1}) => {
+  const segs = 6;
+  const pts: V3[] = Array.from({length: segs + 1}, (_, i) => {
+    const t = i / segs;
+    return [p[0] + Math.sin(t * 1.4) * lean * h * 0.5, p[1] + t * h, p[2]];
+  });
+  const top = pts[segs];
+  return (
+    <group>
+      {pts.slice(0, -1).map((a, i) => (
+        <Cyl key={i} a={a} b={pts[i + 1]} r={0.22 - i * 0.015} c={i % 2 ? '#8a6a48' : '#7a5a3a'} seg={8} />
+      ))}
+      {Array.from({length: 9}).map((_, i) => {
+        const ang = (i / 9) * Math.PI * 2 + seed;
+        return (
+          <group key={i} position={top} rotation={[0, ang, 0]}>
+            <group rotation={[0, 0, -0.35 - rnd(i + seed) * 0.5]}>
+              <mesh position={[1.6, -0.25, 0]} rotation={[0.25, 0, -0.18]} castShadow>
+                <boxGeometry args={[3.2, 0.04, 0.75]} />
+                <meshStandardMaterial color={i % 2 ? '#3f8f3a' : '#4fa443'} roughness={0.8} side={THREE.DoubleSide} />
+              </mesh>
+            </group>
+          </group>
+        );
+      })}
+    </group>
   );
 };

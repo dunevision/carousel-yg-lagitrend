@@ -1,14 +1,15 @@
 import React from 'react';
 import {useCurrentFrame} from 'remotion';
 import * as THREE from 'three';
-import {Box, Burst, Cam, Clouds, Cyl, DECK, Person, Sea, Stage, TH, V3, clamp01, ease, easeOut, lerp, lerp3, rnd} from './kit';
+import {Box, Burst, Cam, Clouds, Cyl, DECK, Palm, Person, RiceField, Sea, Stage, TH, V3, clamp01, ease, easeOut, lerp, lerp3, rnd} from './kit';
 import {Bridge, CablesAt, CityLights, DeckSeg, Gantry, Searchlight, Segment, Ship, TowerAt} from './bridge';
 import {Callout, SceneFrame, StatBox, Tag, C} from './ui';
+import {RealSea} from './fx';
 import {FPS, Timed} from './script';
 
 type P = {s: Timed};
-const DAY_BG = '#dcefec';
-const DAY_SKY: [string, string] = ['#6fb0e4', '#e3f2ee'];
+const DAY_BG = '#cfe6ee';
+const DAY_SKY: [string, string] = ['#3f8fd6', '#cfe6ee'];
 const NIGHT_SKY: [string, string] = ['#03051a', '#1b2b66'];
 const SEA_DAY = '#86cfc6';
 const NIGHT_BG = '#15204e';
@@ -20,7 +21,7 @@ const useT = (s: Timed) => {
 
 const NightWorld: React.FC<{f: number; gapHalf: number; lights?: boolean}> = ({f, gapHalf, lights = true}) => (
   <>
-    <Sea f={f} color="#16275a" size={600} seg={130} amp={0.12} />
+    <RealSea f={f} night color="#0c1a40" />
     <Bridge night gapHalf={gapHalf} lamps />
     <CityLights />
     {lights ? (
@@ -43,7 +44,7 @@ const S01: React.FC<P> = ({s}) => {
       <Stage cam={cam} bg={NIGHT_BG} sky={NIGHT_SKY} stars fog={[90, 330]} night>
         <NightWorld f={f} gapHalf={1.4} />
       </Stage>
-      <Callout cam={cam} at={[0, DECK + 0.3, 0]} label="potongan terakhir" dx={150} dy={230} from={40} />
+      <Callout cam={cam} at={[0, DECK + 0.3, 0]} label="potongan terakhir" dx={170} dy={-200} from={40} />
     </SceneFrame>
   );
 };
@@ -51,7 +52,7 @@ const S01: React.FC<P> = ({s}) => {
 // ---------- 02 & 14: celah malam ----------
 const GapNight: React.FC<{f: number; segY: number; showSeg?: boolean; g?: number}> = ({f, segY, showSeg = true, g = 2.3}) => (
   <>
-    <Sea f={f} color="#16275a" size={600} seg={130} amp={0.1} />
+    <RealSea f={f} night color="#0c1a40" />
     <Bridge night gapHalf={g} lamps />
     <CityLights />
     <Gantry x={-g} dir={-1} night />
@@ -106,7 +107,7 @@ const S03: React.FC<P> = ({s}) => {
 // ---------- 04 ----------
 const DayWorld: React.FC<{f: number; gapHalf: number; dy?: number; h?: number}> = ({f, gapHalf, dy = 0, h = TH}) => (
   <>
-    <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+    <RealSea f={f} color="#139c93" />
         <Clouds f={f} />
     <group position={[0, dy, 0]}>
       <Bridge gapHalf={gapHalf} h={h} />
@@ -143,8 +144,8 @@ const S05: React.FC<P> = ({s}) => {
   return (
     <SceneFrame s={s}>
       <Stage cam={cam} bg="#cfe7e4">
-        <Box p={[0, -2.5, 0]} s={[200, 1, 200]} c="#e4c9a9" />
-        <Box p={[0, 0, 0]} s={[200, 0.1, 200]} c="#7fcfc4" opacity={0.55} />
+        <Box p={[0, -2.5, 0]} s={[200, 1, 200]} c="#e4c9a9" t="sand" ts={6} />
+        <Box p={[0, 0, 0]} s={[200, 0.1, 200]} c="#2fb3a8" opacity={0.6} />
         <Box p={[0, 0.06, -1]} s={[14, 0.02, 120]} c="#f2ddc0" opacity={0.7} />
         {strips}
         <group position={[0, 0.5, z]}>
@@ -286,11 +287,17 @@ const S08: React.FC<P> = ({s}) => {
   const arrows = [-5.5, -3.2, -0.9].map((y) => y);
   return (
     <SceneFrame s={s}>
-      <Stage cam={cam} bg="#cde9d4">
-        <Box p={[0, 0.3, 0]} s={[34, 0.6, 9]} c="#7cc24f" />
-        <Box p={[0, -4.8, 0]} s={[34, 9.6, 9]} c="#4a3225" />
+      <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[40, 160]}>
+        <Box p={[0, 0.3, -7.75]} s={[60, 0.6, 24.5]} c="#8fbf6a" t="grass" ts={3} />
+        <RiceField x0={-16} x1={16} z0={-14} z1={3.6} />
+        <Palm p={[-9, 0.6, -10]} h={9} seed={1} />
+        <Palm p={[7, 0.6, -13]} h={10} lean={-0.2} seed={2} />
+        <Palm p={[14, 0.6, -9]} h={8} seed={3} />
+        <Palm p={[-15, 0.6, -14]} h={10} lean={0.25} seed={4} />
+        <Box p={[0, -4.8, 4]} s={[60, 9.6, 1]} c="#6a4a36" t="mud" ts={5} />
+        <Box p={[0, -4.8, -12]} s={[60, 9.6, 31]} c="#4a3225" />
         {Array.from({length: 60}).map((_, i) => (
-          <Box key={i} p={[-14 + rnd(i) * 28, -0.8 - rnd(i + 5) * 8.4, 4.55]} s={[0.4 + rnd(i + 3) * 0.8, 0.16, 0.05]} c="#2f1f16" />
+          <Box key={i} p={[-14 + rnd(i) * 28, -0.8 - rnd(i + 5) * 8.4, 4.53]} s={[0.4 + rnd(i + 3) * 0.8, 0.16, 0.05]} c="#2f1f16" />
         ))}
         {Array.from({length: 46}).map((_, i) => (
           <mesh key={i} position={[-15 + i * 0.68, 1.1, 3 + rnd(i) * 1.2]} rotation={[0, 0, (rnd(i + 2) - 0.5) * 0.4]}>
@@ -298,13 +305,13 @@ const S08: React.FC<P> = ({s}) => {
             <meshStandardMaterial color="#4fa83a" flatShading />
           </mesh>
         ))}
-        <Cyl a={[1.6, bottom, 0]} b={[1.6, top, 0]} r={0.33} c="#f2b705" />
-        <Person p={[-0.4, 0.6, 0]} f={f} rotY={Math.PI / 2} sc={1.7} shirt="#eee9e0" armsFwd={-2.4} />
+        <Cyl a={[1.6, bottom, 4.9]} b={[1.6, top, 4.9]} r={0.3} c="#d9b45a" seg={10} />
+        <Person p={[-0.4, 0.6, 4.2]} f={f} rotY={Math.PI / 2} sc={1.7} shirt="#eee9e0" armsFwd={-2.4} />
         {k > 0.55
           ? arrows.map((y, i) => {
               const a = clamp01((k - 0.55) / 0.3 - i * 0.12);
               return [-1, 1].map((sd) => (
-                <group key={`${i}${sd}`} position={[1.6 + sd * 1.0, y, 0.2]} scale={a}>
+                <group key={`${i}${sd}`} position={[1.6 + sd * 1.0, y, 5.1]} scale={a}>
                   <Cyl a={[0, -0.8, 0]} b={[0, 0.5, 0]} r={0.09} c="#f07a2e" />
                   <mesh position={[0, 0.8, 0]}>
                     <coneGeometry args={[0.28, 0.5, 6]} />
@@ -315,15 +322,15 @@ const S08: React.FC<P> = ({s}) => {
             })
           : null}
         {k > 0.9 ? (
-          <group position={[1.6, -7.4, 0.6]}>
+          <group position={[1.6, -7.4, 5.1]}>
             <Box p={[0, 0, 0]} s={[1.5, 0.22, 0.2]} c={C.red} rot={[0, 0, 0.78]} />
             <Box p={[0, 0, 0]} s={[1.5, 0.22, 0.2]} c={C.red} rot={[0, 0, -0.78]} />
           </group>
         ) : null}
       </Stage>
       <Tag label="PERUMPAMAAN" left={48} top={70} />
-      <Callout cam={cam} at={[2.6, -3.4, 0.4]} label="gesekan" dx={230} dy={-30} from={Math.round(s.phr[2].s * FPS)} />
-      <Callout cam={cam} at={[1.6, -7.4, 0.6]} label="ujung" tone="red" dx={-200} dy={20} from={Math.round(s.phr[1].s * FPS) + 10} />
+      <Callout cam={cam} at={[2.6, -3.4, 5.1]} label="gesekan" dx={230} dy={-30} from={Math.round(s.phr[2].s * FPS)} />
+      <Callout cam={cam} at={[1.6, -7.4, 5.1]} label="ujung" tone="red" dx={-200} dy={20} from={Math.round(s.phr[1].s * FPS) + 10} />
     </SceneFrame>
   );
 };
@@ -345,7 +352,7 @@ const S09: React.FC<P> = ({s}) => {
   return (
     <SceneFrame s={s}>
       <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[80, 380]}>
-        <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <RealSea f={f} color="#139c93" />
         <Clouds f={f} />
         <TowerAt x={-20} h={hl} />
         <TowerAt x={20} h={hr} />
@@ -373,7 +380,7 @@ const S10: React.FC<P> = ({s}) => {
   return (
     <SceneFrame s={s}>
       <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[100, 400]}>
-        <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <RealSea f={f} color="#139c93" />
         <Clouds f={f} />
         <TowerAt x={0} />
         <DeckSeg x0={-L} x1={L} />
@@ -423,8 +430,8 @@ const S11: React.FC<P> = ({s}) => {
     <SceneFrame s={s}>
       <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[60, 260]}>
         <Clouds f={f} z={-120} y={45} />
-        <Box p={[px, -0.25, 0]} s={[80, 0.5, 30]} c="#79b84a" />
-        <Box p={[px, 0.03, 3.6]} s={[80, 0.06, 4.4]} c="#8b8f95" />
+        <Box p={[px, -0.25, 0]} s={[80, 0.5, 30]} c="#a5cf7c" t="grass" ts={3} />
+        <Box p={[px, 0.03, 3.6]} s={[80, 0.06, 4.4]} c="#b9bcc2" t="asphalt" ts={3} />
         {Array.from({length: 24}).map((_, i) => (
           <Box key={i} p={[Math.floor(px / 3) * 3 - 28 + i * 3, 0.07, 3.6]} s={[1.3, 0.02, 0.14]} c="#f3f3ee" />
         ))}
@@ -432,7 +439,7 @@ const S11: React.FC<P> = ({s}) => {
           const hx = Math.floor(px / 20) * 20 - 20 + i * 20;
           return (
             <group key={i} position={[hx, 0, -5]}>
-              <Box p={[0, 2.2, 0]} s={[11, 4.4, 4]} c="#f3efe5" />
+              <Box p={[0, 2.2, 0]} s={[11, 4.4, 4]} c="#fbf7ee" t="concrete" ts={5} />
               <Box p={[0, 4.9, 0]} s={[12.4, 1.0, 5.4]} c="#c8553d" rot={[0, 0, 0]} />
               {[-3.5, 0, 3.5].map((wx) => (
                 <Box key={wx} p={[wx, 2.6, 2.05]} s={[1.5, 1.7, 0.1]} c="#2b3238" />
@@ -465,7 +472,7 @@ const S12: React.FC<P> = ({s}) => {
   return (
     <SceneFrame s={s}>
       <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[100, 420]}>
-        <Sea f={f} color={SEA_DAY} size={600} seg={130} amp={0.07} />
+        <RealSea f={f} color="#139c93" />
         <Clouds f={f} />
         <Bridge />
         <Ship p={[sx, 0.1, 2.5]} sc={0.6} />
@@ -487,7 +494,7 @@ const S13: React.FC<P> = ({s}) => {
   return (
     <SceneFrame s={s}>
       <Stage cam={cam} bg={DAY_BG} sky={DAY_SKY} fog={[150, 480]}>
-        <Sea f={f} color={SEA_DAY} size={600} seg={130} />
+        <RealSea f={f} color="#139c93" />
         <Clouds f={f} />
         <Bridge gapHalf={g} />
         <Gantry x={-g} dir={-1} />
