@@ -2,6 +2,7 @@ import React from 'react';
 import {Composition, Sequence, AbsoluteFill} from 'remotion';
 import {FPS, TIMED, TOTAL} from './script';
 import {SCENE_COMPONENTS} from './scenes';
+import {SAMPLE_DUR, Sampel} from './sample';
 
 const Video: React.FC = () => (
   <AbsoluteFill style={{background: '#ECEAE0'}}>
@@ -17,5 +18,8 @@ const Video: React.FC = () => (
 );
 
 export const RemotionRoot: React.FC = () => (
-  <Composition id="Suramadu" component={Video} width={1080} height={1920} fps={FPS} durationInFrames={TOTAL} />
+  <>
+    <Composition id="Suramadu" component={Video} width={1080} height={1920} fps={FPS} durationInFrames={TOTAL} />
+    <Composition id="Sampel8" component={Sampel} width={1080} height={1920} fps={FPS} durationInFrames={SAMPLE_DUR} />
+  </>
 );

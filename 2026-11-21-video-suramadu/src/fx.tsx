@@ -153,7 +153,7 @@ export const RealSea: React.FC<{f: number; color?: string; night?: boolean; y?: 
     return w;
   }, [color, night, distortion]);
   (water.material as THREE.ShaderMaterial).uniforms.time.value = f / 30 * 0.6;
-  (water.material as THREE.ShaderMaterial).uniforms.size.value = night ? 3 : 5;
+  (water.material as THREE.ShaderMaterial).uniforms.size.value = night ? 3 : 14;
   return <primitive object={water} position={[0, y, 0]} />;
 };
 
