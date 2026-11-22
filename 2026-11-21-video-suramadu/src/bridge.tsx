@@ -168,12 +168,13 @@ const Shore: React.FC<{night: boolean}> = ({night}) => (
   </group>
 );
 
-export const Bridge: React.FC<{gapHalf?: number; night?: boolean; h?: number; approach?: boolean; lamps?: boolean; segColor?: string}> = ({
+export const Bridge: React.FC<{gapHalf?: number; night?: boolean; h?: number; approach?: boolean; lamps?: boolean; segColor?: string; shore?: boolean}> = ({
   gapHalf = 0,
   night = false,
   h = TH,
   approach = true,
   lamps = false,
+  shore = true,
 }) => {
   const ok = (x: number) => Math.abs(x) >= gapHalf - 0.01 && Math.abs(x) <= 44;
   const lampNodes: React.ReactNode[] = [];
@@ -203,7 +204,7 @@ export const Bridge: React.FC<{gapHalf?: number; night?: boolean; h?: number; ap
         <>
           <Approach side={-1} night={night} />
           <Approach side={1} night={night} />
-          <Shore night={night} />
+          {shore ? <Shore night={night} /> : null}
         </>
       ) : null}
       {h > TH - 1 ? (

@@ -2,19 +2,25 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {continueRender, delayRender, staticFile} from 'remotion';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {FBXLoader} from 'three/examples/jsm/loaders/FBXLoader.js';
 import {V3} from './kit';
 
 const loader = new GLTFLoader();
+const fbxLoader = new FBXLoader();
 const resolved = new Map<string, THREE.Object3D>();
 const pending = new Map<string, Promise<THREE.Object3D>>();
 
 const load = (file: string) => {
   if (!pending.has(file)) {
+    const url = staticFile(`models/${file}`);
+    const p: Promise<THREE.Object3D> = file.endsWith('.fbx')
+      ? fbxLoader.loadAsync(url)
+      : loader.loadAsync(url).then((g) => g.scene);
     pending.set(
       file,
-      loader.loadAsync(staticFile(`models/${file}`)).then((g) => {
-        resolved.set(file, g.scene);
-        return g.scene;
+      p.then((o) => {
+        resolved.set(file, o);
+        return o;
       }),
     );
   }
@@ -46,6 +52,16 @@ export const Model: React.FC<{file: string; p: V3; length: number; rotY?: number
       if (m.isMesh) {
         m.castShadow = true;
         m.receiveShadow = true;
+        // FBX sering membawa material transparan -> tampak tembus pandang; paksa solid
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        mats.forEach((mt) => {
+          const x = mt as THREE.MeshPhongMaterial;
+          x.transparent = false;
+          x.opacity = 1;
+          x.depthWrite = true;
+          x.alphaTest = 0;
+          x.side = THREE.FrontSide;
+        });
       }
     });
     const box = new THREE.Box3().setFromObject(clone);

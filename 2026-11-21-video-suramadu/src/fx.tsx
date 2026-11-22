@@ -134,7 +134,7 @@ export const RealSea: React.FC<{f: number; color?: string; night?: boolean; y?: 
   color = '#2a8f8a',
   night = false,
   y = 0,
-  distortion = 1.6,
+  distortion = 0.9,
 }) => {
   const water = useMemo(() => {
     const geo = new THREE.PlaneGeometry(3000, 3000);
@@ -152,8 +152,8 @@ export const RealSea: React.FC<{f: number; color?: string; night?: boolean; y?: 
     w.rotation.x = -Math.PI / 2;
     return w;
   }, [color, night, distortion]);
-  (water.material as THREE.ShaderMaterial).uniforms.time.value = f / 30 * 0.6;
-  (water.material as THREE.ShaderMaterial).uniforms.size.value = night ? 3 : 14;
+  (water.material as THREE.ShaderMaterial).uniforms.time.value = (f / 30) * 0.22;
+  (water.material as THREE.ShaderMaterial).uniforms.size.value = night ? 2 : 2.4;
   return <primitive object={water} position={[0, y, 0]} />;
 };
 
@@ -181,7 +181,7 @@ export const Post: React.FC<{night?: boolean; bloom?: number}> = ({night = false
   const camera = useThree((st) => st.camera);
   const size = useThree((st) => st.size);
   const composer = useMemo(() => {
-    const c = new PP.EffectComposer(gl, {frameBufferType: THREE.HalfFloatType});
+    const c = new PP.EffectComposer(gl, {frameBufferType: THREE.HalfFloatType, multisampling: 4});
     c.addPass(new PP.RenderPass(scene, camera));
     const bl = new PP.BloomEffect({
       intensity: bloom ?? (night ? 0.9 : 0.35),
