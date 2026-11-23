@@ -84,9 +84,9 @@ def content(i,n,title,intro,items,src,numbered=True):
         for l in ls:d.text((195,ty),l,font=f,fill=WHITE);ty+=46
     return im
 def stat(i,n,big,cap,body,src):
-    im,d=frame(i,n,src);bf=F(AN,330);d.text((80,530),big,font=bf,fill=ACC,anchor='ls')
-    d.text((80,610),cap,font=F(PB,40),fill=WHITE,anchor='ls');d.rectangle([80,650,170,658],fill=ACC)
-    lines(d,80,685,body,F(PR,34),WHITE,900,46);return im
+    im,d=frame(i,n,src);bf=F(AN,330);d.text((80,505),big,font=bf,fill=ACC,anchor='ls')
+    d.text((80,585),cap,font=F(PB,40),fill=WHITE,anchor='ls');d.rectangle([80,625,170,633],fill=ACC)
+    lines(d,80,660,body,F(PR,34),WHITE,900,46);return im
 def closer(i,n,q,sub,src):
     im,d=frame(i,n,src);y=215;tf=F(AN,110)
     for l in bwrap(d,q,tf,920):d.text((80,y),l,font=tf,fill=WHITE);y+=130
