@@ -50,6 +50,7 @@ def identity(d,im,x,y0,dark=False,pitch=42):
         pth=ICONDIR+ic+'.png'
         if os.path.exists(pth):
             g=Image.open(pth).convert('RGBA');g.thumbnail((S,S));im.paste(g,(x+(S-g.width)//2,cy-g.height//2),g)
+            if ic=='th' and not dark:d.rounded_rectangle([x-1,cy-S//2-1,x+S,cy+S//2],radius=9,outline=(120,126,140),width=2)
         else:
             d.rounded_rectangle([x,cy-S//2,x+S,cy+S//2],radius=8,outline=col,width=3);d.text((x+S//2,cy),{'ig':'IG','fb':'FB','th':'TH'}[ic],font=F(PB,17),fill=col,anchor='mm')
         d.text((x+S+16,cy),txt,font=F(PB,28),fill=col,anchor='lm')
