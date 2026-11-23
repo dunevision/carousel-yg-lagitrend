@@ -44,7 +44,7 @@ def logo(im,cx,cy,r=95,onacc=False):
         d.ellipse([cx-r,cy-r,cx+r,cy+r],outline=INKD if onacc else ACC,width=5);d.text((cx,cy),"LOGO",font=F(PB,30),fill=INKD if onacc else ACC,anchor='mm')
 def identity(d,im,x,y0,dark=False,pitch=42):
     # y0 = titik tengah baris pertama; ikon dan teks disejajarkan di tengah baris
-    col=INKD if dark else WHITE;S=28
+    col=INKD if dark else WHITE;S=24
     for k,(ic,txt) in enumerate(IDENT):
         cy=y0+k*pitch
         pth=ICONDIR+ic+'.png'
@@ -52,8 +52,8 @@ def identity(d,im,x,y0,dark=False,pitch=42):
             g=Image.open(pth).convert('RGBA');g.thumbnail((S,S));im.paste(g,(x+(S-g.width)//2,cy-g.height//2),g)
             if ic=='th' and not dark:d.rounded_rectangle([x-1,cy-S//2-1,x+S,cy+S//2],radius=8,outline=(120,126,140),width=2)
         else:
-            d.rounded_rectangle([x,cy-S//2,x+S,cy+S//2],radius=7,outline=col,width=2);d.text((x+S//2,cy),{'ig':'IG','fb':'FB','th':'TH'}[ic],font=F(PB,14),fill=col,anchor='mm')
-        d.text((x+S+14,cy),txt,font=F(PB,24),fill=col,anchor='lm')
+            d.rounded_rectangle([x,cy-S//2,x+S,cy+S//2],radius=7,outline=col,width=2);d.text((x+S//2,cy),{'ig':'IG','fb':'FB','th':'TH'}[ic],font=F(PB,12),fill=col,anchor='mm')
+        d.text((x+S+12,cy),txt,font=F(PB,20),fill=col,anchor='lm')
 def frame(i,n,src=None,panel=False):
     im=Image.new('RGB',(W,H),BG);d=ImageDraw.Draw(im)
     for x in range(0,W,110):d.line([x,0,x,H],fill=(15,17,24),width=2)
@@ -63,14 +63,14 @@ def frame(i,n,src=None,panel=False):
     d.line([80,130,W-80,130],fill=LN,width=3)
     if not panel:
         if src:d.text((80,884),src,font=F(PR,28),fill=MUT,anchor='ls')
-        identity(d,im,80,948,False,36);logo(im,925,960,95)
+        identity(d,im,80,952,False,32);logo(im,925,960,95)
     return im,d
 def hook(i,n,title,hl,body):
     im,d=frame(i,n,panel=True);y=170;tf=F(AN,112)
     for l in wrap(d,title,tf,920):d.text((80,y),l,font=tf,fill=WHITE);y+=122
     y+=26
     hw=d.textlength(hl,font=tf);d.rectangle([72,y+14,72+hw+36,y+150],fill=ACC);d.text((90,y+10),hl,font=tf,fill=INKD)
-    d.rectangle([0,650,W,H],fill=ACC);lines(d,80,682,body,F(PB,36),INKD,780,50);identity(d,im,80,935,True,36)
+    d.rectangle([0,650,W,H],fill=ACC);lines(d,80,682,body,F(PB,36),INKD,780,50);identity(d,im,80,940,True,32)
     logo(im,915,870,105,True);return im
 def content(i,n,title,intro,items,src,numbered=True):
     im,d=frame(i,n,src);y=175;tf=F(AN,92)
