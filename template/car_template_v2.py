@@ -7,7 +7,31 @@ PB='/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf'
 PM='/usr/share/fonts/truetype/google-fonts/Poppins-Medium.ttf'
 PR='/usr/share/fonts/truetype/google-fonts/Poppins-Regular.ttf'
 BG=(10,12,18); WHITE=(244,241,234); ACC=(255,184,64); MUT=(200,205,215); CARD=(24,28,38); LN=(70,76,92); GRN=(60,200,130); INKD=(12,12,16)
-F=lambda p,s:ImageFont.truetype(p,s)
+SC=3  # supersampling: gambar digambar 3x lebih besar lalu dikecilkan, supaya tepi halus (anti-aliasing)
+class SF:
+    def __init__(self,raw):self.raw=raw
+F=lambda p,s:SF(ImageFont.truetype(p,int(s*SC)))
+def _f(v):
+    out=[]
+    for a in (v if isinstance(v,(list,tuple)) else [v]):
+        out.extend(_f(a) if isinstance(a,(list,tuple)) else [a*SC])
+    return out
+def _pts(v):
+    f=_f(v);return [(f[k],f[k+1]) for k in range(0,len(f),2)] if isinstance(v[0],(list,tuple)) else f
+class SD:
+    def __init__(self,c):self.d=ImageDraw.Draw(c.img)
+    def text(self,xy,t,font,fill=None,anchor=None):self.d.text((xy[0]*SC,xy[1]*SC),t,font=font.raw,fill=fill,anchor=anchor)
+    def textlength(self,t,font):return self.d.textlength(t,font=font.raw)/SC
+    def line(self,xy,fill=None,width=1,joint=None):self.d.line(_pts(xy),fill=fill,width=int(width*SC),joint=joint)
+    def rectangle(self,xy,fill=None,outline=None,width=1):self.d.rectangle(_f(xy),fill=fill,outline=outline,width=int(width*SC))
+    def rounded_rectangle(self,xy,radius=0,fill=None,outline=None,width=1):self.d.rounded_rectangle(_f(xy),radius=radius*SC,fill=fill,outline=outline,width=int(width*SC))
+    def ellipse(self,xy,fill=None,outline=None,width=1):self.d.ellipse(_f(xy),fill=fill,outline=outline,width=int(width*SC))
+    def polygon(self,xy,fill=None,outline=None):self.d.polygon(_pts(xy),fill=fill,outline=outline)
+    def arc(self,xy,start,end,fill=None,width=1):self.d.arc(_f(xy),start,end,fill=fill,width=int(width*SC))
+class Canvas:
+    def __init__(self,img):self.img=img
+    def paste_big(self,g,xy):self.img.paste(g,(int(xy[0]),int(xy[1])),g)
+    def save(self,path):self.img.resize((W,H),Image.LANCZOS).save(path)
 IDENT=[('ig','@yg_lagitrend'),('fb','yg lagi trend'),('th','@yg_lagitrend')]  # satu set untuk semua platform
 ICONDIR='/home/claude/carousel-yg-lagitrend/template/icons/'
 LOGO='/home/claude/carousel-yg-lagitrend/template/logo.png'
@@ -37,9 +61,9 @@ def lines(d,x,y,t,f,fill,w,lh):
     for l in bwrap(d,t,f,w):d.text((x,y),l,font=f,fill=fill);y+=lh
     return y
 def logo(im,cx,cy,r=95,onacc=False):
-    d=ImageDraw.Draw(im)
+    d=SD(im)
     if os.path.exists(LOGO):
-        lg=Image.open(LOGO).convert('RGBA');lg.thumbnail((2*r,2*r));im.paste(lg,(cx-lg.width//2,cy-lg.height//2),lg)
+        lg=Image.open(LOGO).convert('RGBA');lg.thumbnail((2*r*SC,2*r*SC),Image.LANCZOS);im.paste_big(lg,(cx*SC-lg.width//2,cy*SC-lg.height//2))
     else:
         d.ellipse([cx-r,cy-r,cx+r,cy+r],outline=INKD if onacc else ACC,width=5);d.text((cx,cy),"LOGO",font=F(PB,30),fill=INKD if onacc else ACC,anchor='mm')
 def identity(d,im,x,y0,dark=False,pitch=42):
@@ -49,13 +73,13 @@ def identity(d,im,x,y0,dark=False,pitch=42):
         cy=y0+k*pitch
         pth=ICONDIR+ic+'.png'
         if os.path.exists(pth):
-            g=Image.open(pth).convert('RGBA');g.thumbnail((S,S));im.paste(g,(x+(S-g.width)//2,cy-g.height//2),g)
+            g=Image.open(pth).convert('RGBA');g.thumbnail((S*SC,S*SC),Image.LANCZOS);im.paste_big(g,((x+S/2)*SC-g.width//2,cy*SC-g.height//2))
             if ic=='th' and not dark:d.rounded_rectangle([x-1,cy-S//2-1,x+S,cy+S//2],radius=8,outline=(120,126,140),width=2)
         else:
             d.rounded_rectangle([x,cy-S//2,x+S,cy+S//2],radius=7,outline=col,width=2);d.text((x+S//2,cy),{'ig':'IG','fb':'FB','th':'TH'}[ic],font=F(PB,12),fill=col,anchor='mm')
         d.text((x+S+12,cy),txt,font=F(PB,20),fill=col,anchor='lm')
 def frame(i,n,src=None,panel=False):
-    im=Image.new('RGB',(W,H),BG);d=ImageDraw.Draw(im)
+    im=Canvas(Image.new('RGB',(W*SC,H*SC),BG));d=SD(im)
     for x in range(0,W,110):d.line([x,0,x,H],fill=(15,17,24),width=2)
     d.text((80,105),f"{i:02d}",font=F(AN,64),fill=ACC,anchor='ls');d.text((80+d.textlength(f"{i:02d}",font=F(AN,64))+8,105),f"/{n:02d}",font=F(PB,28),fill=MUT,anchor='ls')
     d.rectangle([W-80-(d.textlength("YG LAGITREND",font=F(PB,28))+34),70,W-80-(d.textlength("YG LAGITREND",font=F(PB,28))+34)+18,88],fill=ACC)
