@@ -91,3 +91,54 @@ def closer(i,n,q,sub,src):
     im,d=frame(i,n,src);y=215;tf=F(AN,110)
     for l in bwrap(d,q,tf,920):d.text((80,y),l,font=tf,fill=WHITE);y+=130
     lines(d,80,y+20,sub,F(PM,36),MUT,620,50);return im
+
+# ---------- ILUSTRASI (tema gelap) ----------
+RED=(240,90,80)
+def ic_phone(d,cx,cy,s=1,col=WHITE):
+    d.rounded_rectangle([cx-42*s,cy-80*s,cx+42*s,cy+80*s],radius=int(14*s),outline=col,width=max(3,int(6*s)),fill=(18,22,30))
+    d.rounded_rectangle([cx-14*s,cy-68*s,cx+14*s,cy-62*s],radius=3,fill=col)
+def ic_shield(d,cx,cy,s=1,col=ACC,tick=INKD):
+    d.polygon([(cx-30*s,cy-34*s),(cx+30*s,cy-34*s),(cx+30*s,cy+4*s),(cx,cy+40*s),(cx-30*s,cy+4*s)],fill=col)
+    d.line([(cx-13*s,cy-2*s),(cx-3*s,cy+11*s),(cx+16*s,cy-14*s)],fill=tick,width=max(3,int(6*s)),joint='curve')
+def ic_clock(d,cx,cy,s=1,col=ACC):
+    d.ellipse([cx-62*s,cy-62*s,cx+62*s,cy+62*s],outline=col,width=max(4,int(9*s)),fill=(18,22,30))
+    d.line([cx,cy,cx,cy-38*s],fill=col,width=max(3,int(8*s)));d.line([cx,cy,cx+28*s,cy+16*s],fill=col,width=max(3,int(8*s)))
+def ic_x(d,cx,cy,s=1,col=RED):
+    d.ellipse([cx-34*s,cy-34*s,cx+34*s,cy+34*s],fill=col)
+    d.line([cx-14*s,cy-14*s,cx+14*s,cy+14*s],fill=WHITE,width=max(4,int(8*s)));d.line([cx-14*s,cy+14*s,cx+14*s,cy-14*s],fill=WHITE,width=max(4,int(8*s)))
+def ic_ok(d,cx,cy,s=1,col=GRN):
+    d.ellipse([cx-34*s,cy-34*s,cx+34*s,cy+34*s],fill=col)
+    d.line([(cx-15*s,cy+1*s),(cx-4*s,cy+13*s),(cx+17*s,cy-13*s)],fill=WHITE,width=max(4,int(8*s)),joint='curve')
+def flow(i,n,title,intro,steps,note,src):
+    """steps: list of (ikon, label); ikon in 'phone','clock','phone2'"""
+    im,d=frame(i,n,src);y=175;tf=F(AN,92)
+    for l in bwrap(d,title,tf,920):d.text((80,y),l,font=tf,fill=WHITE);y+=108
+    y+=22;y=lines(d,80,y,intro,F(PM,34),MUT,920,48)+24
+    k=len(steps);gap=50;cw=(920-gap*(k-1))//k;ch=330
+    for j,(ic,lab) in enumerate(steps):
+        x=80+j*(cw+gap);d.rounded_rectangle([x,y,x+cw,y+ch],radius=26,fill=CARD,outline=LN,width=2)
+        d.ellipse([x+16,y+16,x+62,y+62],fill=ACC);d.text((x+39,y+40),str(j+1),font=F(AN,30),fill=INKD,anchor='mm')
+        cx=x+cw//2;cy=y+130
+        if ic=='clock':ic_clock(d,cx,cy,1.0)
+        else:ic_phone(d,cx,cy,1.0);ic_shield(d,cx,cy+4,1.0)
+        f=F(PB,28);ly=y+235
+        for l in bwrap(d,lab,f,cw-30)[:3]:d.text((cx,ly),l,font=f,fill=WHITE,anchor='mm');ly+=36
+        if j<k-1:
+            ax=x+cw+8;ay=y+ch//2-40;d.polygon([(ax,ay-22),(ax+34,ay),(ax,ay+22)],fill=ACC)
+    lines(d,80,y+ch+34,note,F(PM,34),MUT,920,48);return im
+def compare(i,n,title,left,right,note,src):
+    """left/right: (judul, keterangan)"""
+    im,d=frame(i,n,src);y=175;tf=F(AN,92)
+    for l in bwrap(d,title,tf,920):d.text((80,y),l,font=tf,fill=WHITE);y+=108
+    y+=40;cw=440;ch=420
+    for j,(t,sub) in enumerate((left,right)):
+        x=80+j*(cw+40);good=(j==0)
+        d.rounded_rectangle([x,y,x+cw,y+ch],radius=26,fill=CARD,outline=GRN if good else RED,width=4)
+        cx=x+cw//2;ic_phone(d,cx,y+130,1.15)
+        if good:ic_shield(d,cx,y+135,1.15);ic_ok(d,cx+62,y+60,0.8)
+        else:ic_x(d,cx,y+135,1.0)
+        f=F(PB,32);ly=y+250
+        for l in bwrap(d,t,f,cw-40):d.text((cx,ly),l,font=f,fill=WHITE,anchor='mm');ly+=42
+        f2=F(PR,28);ly+=14
+        for l in bwrap(d,sub,f2,cw-50):d.text((cx,ly),l,font=f2,fill=MUT,anchor='mm');ly+=38
+    lines(d,80,y+ch+30,note,F(PM,34),MUT,920,48);return im
