@@ -1,5 +1,7 @@
 # Daftar konten yang sudah dibuatkan carousel (jangan dibuat lagi)
 
+**FORMAT TERBARU (disetujui Risqy 26 Nov 2026): carousel pakai rasio 4:5, 1080x1350, template/car_template_v3.py (bukan v2 1:1). Contoh: contoh-4x5-storage/. Berlaku untuk semua carousel berikutnya; ukuran 1080x1080 di instruksi lama sudah tidak dipakai.**
+
 Format: tanggal | ID post Threads sumber | ringkasan | folder gambar
 
 2026-11-19 | 6afbb7bbf83aaca8f3a1b7d8 | iPhone 15 ke atas: batas pengisian baterai (views 1105) | 2026-11-19-baterai-iphone
