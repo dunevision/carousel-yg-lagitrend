@@ -14,3 +14,4 @@ Format: tanggal | ID post Threads sumber | ringkasan | folder gambar
 2026-11-23 | 6b03a189c72676f5e97ad2e9 | Bak pasir kucing (Battersea, Purina) | 2026-11-23-bak-pasir-kucing
 2026-11-23 | 6b03a189a6de38de9eafbd85 | Medical ID iPhone (Apple) | 2026-11-23-medical-id-iphone
 2026-11-24 | 6b02502fd5eabfb8cc77664d | Private Space Android 15 (Android Help), views 407 | 2026-11-24-private-space
+2026-11-25 | 6b000e3fca85ebefb00ebd41 | Storage HP penuh: cek, hapus app, Google Photos, Smart Storage (Apple, Google), views 355 | 2026-11-25-storage-hp-penuh
