@@ -17,3 +17,4 @@ Format: tanggal | ID post Threads sumber | ringkasan | folder gambar
 2026-11-23 | 6b03a189a6de38de9eafbd85 | Medical ID iPhone (Apple) | 2026-11-23-medical-id-iphone
 2026-11-24 | 6b02502fd5eabfb8cc77664d | Private Space Android 15 (Android Help), views 407 | 2026-11-24-private-space
 2026-11-25 | 6b000e3fca85ebefb00ebd41 | Storage HP penuh: cek, hapus app, Google Photos, Smart Storage (Apple, Google), views 355 | 2026-11-25-storage-hp-penuh
+2026-11-26 | 6b000e3e738ce4635f9ffd48 | Batas gula, garam, lemak per hari (Kemenkes) dan cara cek label kemasan, views 315 | 2026-11-26-gula-garam-lemak
