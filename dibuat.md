@@ -19,3 +19,4 @@ Format: tanggal | ID post Threads sumber | ringkasan | folder gambar
 2026-11-25 | 6b000e3fca85ebefb00ebd41 | Storage HP penuh: cek, hapus app, Google Photos, Smart Storage (Apple, Google), views 355 | 2026-11-25-storage-hp-penuh
 2026-11-26 | 6b000e3e738ce4635f9ffd48 | Batas gula, garam, lemak per hari (Kemenkes) dan cara cek label kemasan, views 315 | 2026-11-26-gula-garam-lemak
 2026-11-27 | 6b025030d864a011058e4075 | Psoriasis: pemicu kambuh menurut AAD (luka, stres, cuaca, infeksi, alkohol, rokok, obat), views 316 | 2026-11-27-pemicu-psoriasis
+2026-11-28 | 6afaa5af8e87c256a3ba005f | Jerawat: scrub kencang, dipencet, gonta-ganti produk, kulit kering, kapan ke dokter kulit (AAD), views 276 saat dipilih | 2026-11-28-kebiasaan-jerawat
